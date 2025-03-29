@@ -1,0 +1,32 @@
+from pyspark.sql import SparkSession
+
+appName = "PySpark Trabalho de Big Data"
+master = "local"
+spark = SparkSession.builder.appName(appName).master(master).getOrCreate()
+
+file_path = 'imdb-reviews-pt-br.csv'
+imdb_df = spark.read.csv(file_path,
+                          header=True,
+                          inferSchema=True,
+                          quote="\"",
+                          escape="\"",
+                          encoding="UTF-8")
+
+imdb_df.show(5)
+
+imdb_df.printSchema()
+
+def map1(row):
+    if row.sentiment == 'neg':
+        return ('negative_ids', row.id)
+    return None 
+
+def reduceByKey1(x, y):
+    return x + y
+
+mapped_data = imdb_df.rdd.map(map1).filter(lambda x: x is not None)
+reduced_result = mapped_data.reduceByKey(reduceByKey1)
+
+resultado_q1 = reduced_result.collect()
+for key, value in resultado_q1:
+    print(f"Chave: {key} | Soma dos IDs: {value}")
